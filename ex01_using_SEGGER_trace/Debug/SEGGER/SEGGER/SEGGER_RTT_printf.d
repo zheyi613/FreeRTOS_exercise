@@ -1,0 +1,7 @@
+SEGGER/SEGGER/SEGGER_RTT_printf.o: ../SEGGER/SEGGER/SEGGER_RTT_printf.c \
+ ../SEGGER/SEGGER/SEGGER_RTT.h \
+ ../SEGGER/SEGGER/../Config/SEGGER_RTT_Conf.h \
+ E:/stm32/STM32IDE_workspace/qr_uav/SEGGER/Config/SEGGER_RTT_Conf.h
+../SEGGER/SEGGER/SEGGER_RTT.h:
+../SEGGER/SEGGER/../Config/SEGGER_RTT_Conf.h:
+E:/stm32/STM32IDE_workspace/qr_uav/SEGGER/Config/SEGGER_RTT_Conf.h:

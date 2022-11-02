@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Rename resource &apos;qr_uav&apos; to &apos;ex01_using_SEGGER_trace&apos;" description="Rename resource &apos;qr_uav&apos;" flags="7" id="org.eclipse.ltk.core.refactoring.rename.resource" input="/qr_uav" name="ex01_using_SEGGER_trace" stamp="1667377421172" updateReferences="true"/>
+</session>

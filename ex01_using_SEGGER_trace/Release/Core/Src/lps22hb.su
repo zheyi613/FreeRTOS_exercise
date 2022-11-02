@@ -1,0 +1,6 @@
+../Core/Src/lps22hb.c:16:19:lps22hb_read_reg	24	static
+../Core/Src/lps22hb.c:22:19:lps22hb_write_reg	24	static
+../Core/Src/lps22hb.c:105:5:lps22hb_init	112	static
+../Core/Src/lps22hb.c:194:6:lps22hb_read_bypass	32	static
+../Core/Src/lps22hb.c:217:6:lps22hb_read_stream	40	dynamic
+../Core/Src/lps22hb.c:248:6:lps22hb_read_data	0	static
