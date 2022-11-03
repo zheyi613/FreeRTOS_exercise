@@ -71,8 +71,8 @@ all: main-build
 main-build: ex01_using_SEGGER_trace.elf secondary-outputs
 
 # Tool invocations
-ex01_using_SEGGER_trace.elf ex01_using_SEGGER_trace.map: $(OBJS) $(USER_OBJS) E:\stm32\STM32IDE_workspace\qr_uav\STM32F401CCUX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "ex01_using_SEGGER_trace.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"E:\stm32\STM32IDE_workspace\qr_uav\STM32F401CCUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ex01_using_SEGGER_trace.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+ex01_using_SEGGER_trace.elf ex01_using_SEGGER_trace.map: $(OBJS) $(USER_OBJS) E:\stm32\STM32IDE_FreeRTOS_workspace\ex01_using_SEGGER_trace\STM32F401CCUX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "ex01_using_SEGGER_trace.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"E:\stm32\STM32IDE_FreeRTOS_workspace\ex01_using_SEGGER_trace\STM32F401CCUX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ex01_using_SEGGER_trace.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
