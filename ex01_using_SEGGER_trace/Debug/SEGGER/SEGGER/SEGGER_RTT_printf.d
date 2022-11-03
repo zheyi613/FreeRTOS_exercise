@@ -1,7 +1,7 @@
 SEGGER/SEGGER/SEGGER_RTT_printf.o: ../SEGGER/SEGGER/SEGGER_RTT_printf.c \
  ../SEGGER/SEGGER/SEGGER_RTT.h \
  ../SEGGER/SEGGER/../Config/SEGGER_RTT_Conf.h \
- E:/stm32/STM32IDE_FreeRTOS_workspace/ex01_using_SEGGER_trace/SEGGER/Config/SEGGER_RTT_Conf.h
+ D:/STM32/FreeRTOS_exercise/ex01_using_SEGGER_trace/SEGGER/Config/SEGGER_RTT_Conf.h
 ../SEGGER/SEGGER/SEGGER_RTT.h:
 ../SEGGER/SEGGER/../Config/SEGGER_RTT_Conf.h:
-E:/stm32/STM32IDE_FreeRTOS_workspace/ex01_using_SEGGER_trace/SEGGER/Config/SEGGER_RTT_Conf.h:
+D:/STM32/FreeRTOS_exercise/ex01_using_SEGGER_trace/SEGGER/Config/SEGGER_RTT_Conf.h:
