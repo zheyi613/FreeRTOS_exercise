@@ -17,12 +17,10 @@
 #include "SEGGER_RTT.h"
 #include "stm32f4xx.h"
 
-#define UART_BASECLK        (84000000 / 1)
+#define UART_BASECLK         (84000000 / 1)
 #define USART_RX_ERROR_FLAGS 0x0B
 #define USART1_RX_BIT        10
 #define USART1_TX_BIT        9
-
-extern uint32_t SystemCoreClock;
 
 typedef void UART_ON_RX_FUNC(uint8_t Data);
 typedef int  UART_ON_TX_FUNC(uint8_t* pChar);
@@ -102,15 +100,15 @@ void HIF_UART_WaitForTxEnd(void) {
   //
   // Wait until transmission has finished (e.g. before changing baudrate).
   //
-  while ((USART1->SR & (1 << USART_SR_TXE)) == 0);  // Wait until transmit buffer empty (Last byte shift from data to shift register)
-  while ((USART1->SR & (1 << USART_SR_TC)) == 0);   // Wait until transmission is complete
+  while (!(USART1->SR & USART_SR_TXE));  // Wait until transmit buffer empty (Last byte shift from data to shift register)
+  while (!(USART1->SR & USART_SR_TC));   // Wait until transmission is complete
 }
 
 /*********************************************************************
 *
 *       USART1_IRQHandler
 *
-*  Function descriptio
+*  Function description
 *    Interrupt handler.
 *    Handles both, Rx and Tx interrupts
 *
@@ -118,14 +116,13 @@ void HIF_UART_WaitForTxEnd(void) {
 *    (1) This is a high-prio interrupt so it may NOT use embOS functions
 *        However, this also means that embOS will never disable this interrupt
 */
-void USART1_IRQHandler(void);
 void USART1_IRQHandler(void) {
   uint32_t UsartStatus;
   uint8_t v;
   int r;
 
   UsartStatus = USART1->SR;                              // Examine status register
-  if (UsartStatus & (1 << USART_SR_RXNE)) {               // Data received?
+  if (UsartStatus & USART_SR_RXNE) {               // Data received?
     v = USART1->DR;                                      // Read data
     if ((UsartStatus & USART_RX_ERROR_FLAGS) == 0) {   // Only process data if no error occurred
       (void)v;                                         // Avoid warning in BTL
@@ -134,7 +131,7 @@ void USART1_IRQHandler(void) {
       }
     }
   }
-  if (UsartStatus & (1 << USART_SR_TXE)) {                // Tx (data register) empty? => Send next character Note: Shift register may still hold a character that has not been sent yet.
+  if (UsartStatus & USART_SR_TXE) {                // Tx (data register) empty? => Send next character Note: Shift register may still hold a character that has not been sent yet.
     //
     // Under special circumstances, (old) BTL of Flasher does not wait until a complete string has been sent via UART,
     // so there might be an TxE interrupt pending *before* the FW had a chance to set the callbacks accordingly which would result in a NULL-pointer call...
@@ -145,7 +142,7 @@ void USART1_IRQHandler(void) {
     }
     r = _cbOnTx(&v);
     if (r == 0) {                          // No more characters to send ?
-      USART1->CR1 &= ~(1UL << USART_CR1_TXEIE);  // Disable further tx interrupts
+      USART1->CR1 &= ~USART_CR1_TXEIE;  // Disable further tx interrupts
     } else {
       USART1->SR;      // Makes sure that "transmission complete" flag in USART_SR is reset to 0 as soon as we write USART_DR. If USART_SR is not read before, writing USART_DR does not clear "transmission complete". See STM32F4 USART documentation for more detailed description.
       USART1->DR = v;  // Start transmission by writing to data register
@@ -158,7 +155,7 @@ void USART1_IRQHandler(void) {
 *       HIF_UART_EnableTXEInterrupt()
 */
 void HIF_UART_EnableTXEInterrupt(void) {
-  USART1->CR1 |= (1U << USART_CR1_TXEIE);  // enable Tx empty interrupt => Triggered as soon as data register content has been copied to shift register
+  USART1->CR1 |= USART_CR1_TXEIE;  // enable Tx empty interrupt => Triggered as soon as data register content has been copied to shift register
 }
 
 
@@ -208,15 +205,13 @@ void HIF_UART_Init(uint32_t Baudrate, UART_ON_TX_FUNC_P cbOnTx, UART_ON_RX_FUNC_
   //
   // Set baudrate
   //
-  Div = Baudrate * 8;                        // We use 8x oversampling.
-  Div = ((2 * (UART_BASECLK)) / Div) + 1;   // Calculate divider for baudrate and round it correctly. This is necessary to get a tolerance as small as possible.
-  Div = Div / 2;
-  if (Div > 0xFFF) {
-    Div = 0xFFF;        // Limit to 12 bit (mantissa in BRR)
-  }
-  if (Div >= 1) {
-    USART1->BRR = 0xFFF0 & (Div << 4);    // Use only mantissa of fractional divider
-  }
+  Div = UART_BASECLK / Baudrate;	// low 3 bits is fraction, others is int
+  Div = ((Div << 1) & 0xFFF0) | (Div & 0x7);
+  if (Div > 0xFFF7)
+    Div = 0xFFF7;        // Limit maximum div = 255.125, if div over max
+  else if (!Div)
+    Div = 0xFFF0 & (Div << 4);	// Limit div = 0.125, if div is zero
+  USART1->BRR = Div;
   //
   // Setup callbacks which are called by ISR handler and enable interrupt in NVIC
   //

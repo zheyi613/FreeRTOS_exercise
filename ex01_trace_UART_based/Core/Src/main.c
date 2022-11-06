@@ -102,8 +102,9 @@ int main(void)
   /* USER CODE BEGIN 2 */
   vSetVarulMaxPRIGROUPValue();
   DWT_Init();
+  SEGGER_UART_init(500000);
   SEGGER_SYSVIEW_Conf();
-  SEGGER_SYSVIEW_Start();
+//  SEGGER_SYSVIEW_Start();
 
   status = xTaskCreate(task1_handler, "task1", 200, "Hello world from task1\n\r", 2, &task1_handle);
   configASSERT(status == pdPASS);
