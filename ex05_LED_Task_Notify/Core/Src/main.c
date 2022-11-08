@@ -52,6 +52,8 @@
 TaskHandle_t led1_task_handle;
 TaskHandle_t led2_task_handle;
 TaskHandle_t led3_task_handle;
+TaskHandle_t btn_task_handle;
+TaskHandle_t volatile next_task_handle;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -60,6 +62,7 @@ void SystemClock_Config(void);
 static void led1_handler(void *parameters);
 static void led2_handler(void *parameters);
 static void led3_handler(void *parameters);
+static void button_handler(void *parameters);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -101,19 +104,23 @@ int main(void)
   MX_TIM2_Init();
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 2 */
-  vSetVarulMaxPRIGROUPValue();
-  DWT_Init();
   SEGGER_UART_init(500000);
+  DWT_Init();
   SEGGER_SYSVIEW_Conf();
 
-  status = xTaskCreate(led1_handler, "LED1_task", 200, NULL, 2, &led1_task_handle);
+  status = xTaskCreate(led1_handler, "LED1_task", 200, NULL, 3, &led1_task_handle);
   configASSERT(status == pdPASS);
 
   status = xTaskCreate(led2_handler, "LED2_task", 200, NULL, 2, &led2_task_handle);
   configASSERT(status == pdPASS);
 
-  status = xTaskCreate(led3_handler, "LED3_task", 200, NULL, 2, &led3_task_handle);
+  status = xTaskCreate(led3_handler, "LED3_task", 200, NULL, 1, &led3_task_handle);
   configASSERT(status == pdPASS);
+
+  status = xTaskCreate(button_handler, "button_task", 200, NULL, 4, &btn_task_handle);
+  configASSERT(status == pdPASS);
+
+  next_task_handle = led1_task_handle;
 
   vTaskStartScheduler();
   /* USER CODE END 2 */
@@ -177,34 +184,77 @@ void SystemClock_Config(void)
 /* USER CODE BEGIN 4 */
 static void led1_handler(void *parameters)
 {
-	TickType_t last_wakeup_time = xTaskGetTickCount();
+	BaseType_t status;
 
 	while(1) {
 		SEGGER_SYSVIEW_PrintfTarget("Toggling LED1");
 		HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_12);
-		vTaskDelayUntil(&last_wakeup_time, pdMS_TO_TICKS(1000));
+		status = xTaskNotifyWait(0, 0, NULL, pdMS_TO_TICKS(1000));
+		if (status == pdTRUE) {
+			vTaskSuspendAll(); // Prevent context switch
+			next_task_handle = led2_task_handle;
+			xTaskResumeAll();
+			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_SET);
+			SEGGER_SYSVIEW_PrintfTarget("Delete LED1 task");
+			vTaskDelete(NULL); // Self delete
+		}
 	}
 }
 
 static void led2_handler(void *parameters)
 {
-	TickType_t last_wakeup_time = xTaskGetTickCount();
+	BaseType_t status;
 
 	while(1) {
 		SEGGER_SYSVIEW_PrintfTarget("Toggling LED2");
 		HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_13);
-		vTaskDelayUntil(&last_wakeup_time, pdMS_TO_TICKS(800));
+		status = xTaskNotifyWait(0, 0, NULL, pdMS_TO_TICKS(800));
+		if (status == pdTRUE) {
+			vTaskSuspendAll(); // Prevent context switch
+			next_task_handle = led3_task_handle;
+			xTaskResumeAll();
+			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13, GPIO_PIN_SET);
+			SEGGER_SYSVIEW_PrintfTarget("Delete LED2 task");
+			vTaskDelete(NULL); // Self delete
+		}
 	}
 }
 
 static void led3_handler(void *parameters)
 {
-	TickType_t last_wakeup_time = xTaskGetTickCount();
+	BaseType_t status;
 
 	while(1) {
 		SEGGER_SYSVIEW_PrintfTarget("Toggling LED3");
 		HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_14);
-		vTaskDelayUntil(&last_wakeup_time, pdMS_TO_TICKS(400));
+		status = xTaskNotifyWait(0, 0, NULL, pdMS_TO_TICKS(400));
+		if (status == pdTRUE) {
+			vTaskSuspendAll(); // Prevent context switch
+			next_task_handle = NULL;
+			xTaskResumeAll();
+			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14, GPIO_PIN_SET);
+			SEGGER_SYSVIEW_PrintfTarget("Delete LED3 task");
+			vTaskDelete(btn_task_handle);
+			vTaskDelete(NULL); // Self delete
+		}
+	}
+}
+
+static void button_handler(void *parameters)
+{
+	uint8_t btn_read = 1;
+	uint8_t prev_read  = 1;
+
+	while (1) {
+		btn_read = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0);
+
+		if (!btn_read) {
+			if (prev_read)
+				xTaskNotify(next_task_handle, 0, eNoAction);
+		}
+
+		prev_read = btn_read;
+		vTaskDelay(pdMS_TO_TICKS(10));
 	}
 }
 /* USER CODE END 4 */
