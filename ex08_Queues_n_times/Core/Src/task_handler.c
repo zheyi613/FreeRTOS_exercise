@@ -95,20 +95,179 @@ void led_task(void *param)
 	}
 }
 
+uint8_t getnumber(uint8_t *p, int len)
+{
+	uint8_t value;
+
+	if (len > 1)
+		value = ((p[0] - 48) * 10) + p[1] - 48;
+	else
+		value = p[0] - 48;
+
+	return value;
+}
+
 void rtc_task(void *param)
 {
-	while (1) {
+	const char *msg_rtc1 = "======================\n"
+						   "|         RTC        |\n"
+						   "======================\n";
 
+	const char *msg_rtc2 = "Configure Time   --> 0\n"
+						   "Configure Date   --> 1\n"
+						   "Enable reporting --> 2\n"
+						   "Exit             --> 3\n"
+						   "Enter your choice here: ";
+
+	const char *msg_rtc_hh = "Enter hour(1-12):";
+	const char *msg_rtc_mm = "Enter minutes(0-59):";
+	const char *msg_rtc_ss = "Enter seconds(0-59):";
+
+	const char *msg_rtc_dd = "Enter date(1-31):";
+	const char *msg_rtc_mo = "Enter month(1-12):";
+	const char *msg_rtc_dow = "Enter day(1-7, Sun = 1):";
+	const char *msg_rtc_yr = "Enter year(0-99):";
+
+	const char *msg_conf = "Configuration successful\n";
+	const char *msg_rtc_report = "Enable time&date reporting(y/n):";
+
+	uint32_t cmd_addr;
+	command_t *cmd;
+
+	static int rtc_state = 0;
+	int menu_code;
+
+	RTC_TimeTypeDef time;
+	RTC_DateTypeDef date;
+
+#define HH_CONFIG	0
+#define MM_CONFIG	1
+#define SS_CONFIG	2
+
+#define DATE_CONFIG		0
+#define MONTH_CONFIG	1
+#define YEAR_CONFIG		2
+#define DAY_CONFIG		3
+
+	while (1) {
+		xTaskNotifyWait(0, 0, NULL, portMAX_DELAY);
+
+		xQueueSend(q_print, &msg_rtc1, portMAX_DELAY);
+		show_time_date();
+		xQueueSend(q_print, &msg_rtc2, portMAX_DELAY);
+
+		while (curr_state != sMainMenu) {
+			xTaskNotifyWait(0, 0, &cmd_addr, portMAX_DELAY);
+			cmd = (command_t *)cmd_addr;
+
+			switch (curr_state) {
+			case sRtcMenu:
+				if (cmd->len == 1) {
+					menu_code = cmd->payload[0] - 48;
+
+					switch (menu_code) {
+					case 0:
+						curr_state = sRtcTimeConfig;
+						xQueueSend(q_print, &msg_rtc_hh, portMAX_DELAY);
+						break;
+					case 1:
+						curr_state = sRtcDateConfig;
+						xQueueSend(q_print, &msg_rtc_dd, portMAX_DELAY);
+						break;
+					case 2:
+						curr_state = sRtcReport;
+						xQueueSend(q_print, &msg_rtc_report, portMAX_DELAY);
+						break;
+					case 3:
+						curr_state = sMainMenu;
+						break;
+					default:
+						curr_state = sMainMenu;
+						xQueueSend(q_print, &msg_inv, portMAX_DELAY);
+					}
+				} else {
+					curr_state = sMainMenu;
+					xQueueSend(q_print, &msg_inv, portMAX_DELAY);
+				}
+				break;
+			case sRtcTimeConfig:
+				switch (rtc_state) {
+				case HH_CONFIG:
+					time.Hours = getnumber(cmd->payload, cmd->len);
+					rtc_state = MM_CONFIG;
+					xQueueSend(q_print, &msg_rtc_mm, portMAX_DELAY);
+					break;
+				case MM_CONFIG:
+					time.Minutes = getnumber(cmd->payload, cmd->len);
+					rtc_state = SS_CONFIG;
+					xQueueSend(q_print, &msg_rtc_ss, portMAX_DELAY);
+					break;
+				case SS_CONFIG:
+					time.Seconds = getnumber(cmd->payload, cmd->len);
+					if (!validate_rtc_information(&time, NULL)) {
+						rtc_configure_time(&time);
+						xQueueSend(q_print, &msg_conf, portMAX_DELAY);
+						show_time_date();
+					} else {
+						xQueueSend(q_print, &msg_inv, portMAX_DELAY);
+					}
+
+					curr_state = sMainMenu;
+					rtc_state = 0;
+					break;
+				}
+				break;
+			case sRtcDateConfig:
+				switch (rtc_state) {
+				case DATE_CONFIG:
+					date.Date = getnumber(cmd->payload, cmd->len);
+					rtc_state = MONTH_CONFIG;
+					xQueueSend(q_print, &msg_rtc_mo, portMAX_DELAY);
+					break;
+				case MONTH_CONFIG:
+					date.Month = getnumber(cmd->payload, cmd->len);
+					rtc_state = DAY_CONFIG;
+					xQueueSend(q_print, &msg_rtc_dow, portMAX_DELAY);
+					break;
+				case DAY_CONFIG:
+					date.WeekDay = getnumber(cmd->payload, cmd->len);
+					rtc_state = YEAR_CONFIG;
+					xQueueSend(q_print, &msg_rtc_yr, portMAX_DELAY);
+					break;
+				case YEAR_CONFIG:
+					date.Year = getnumber(cmd->payload, cmd->len);
+
+					if (!validate_rtc_information(NULL, &date)) {
+						rtc_configure_date(&date);
+						xQueueSend(q_print, &msg_conf, portMAX_DELAY);
+						show_time_date();
+					} else {
+						xQueueSend(q_print, &msg_conf, portMAX_DELAY);
+					}
+
+					curr_state = sMainMenu;
+					rtc_state = 0;
+					break;
+				}
+				break;
+			case sRtcReport:
+				break;
+			default:
+				xQueueSend(q_print, &msg_inv, portMAX_DELAY);
+			}
+		}
+
+		xTaskNotify(handle_menu_task, 0, eNoAction);
 	}
 }
 
 void print_task(void *param)
 {
-	uint32_t *msg;
+	uint8_t *msg;
 
 	while (1) {
 		xQueueReceive(q_print, &msg, portMAX_DELAY);
-		HAL_UART_Transmit(&huart2, (uint8_t *)msg, strlen((char *)msg), HAL_MAX_DELAY);
+		HAL_UART_Transmit(&huart2, msg, strlen((char *)msg), HAL_MAX_DELAY);
 	}
 }
 

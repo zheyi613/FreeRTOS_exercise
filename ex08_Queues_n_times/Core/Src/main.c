@@ -115,22 +115,22 @@ int main(void)
   status = xTaskCreate(menu_task, "menu_task", 250, NULL, 2, &handle_menu_task);
   configASSERT(status == pdPASS);
 
-  status = xTaskCreate(cmd_task, "cmd_task", 250, NULL, 2, &handle_cmd_task);
-  configASSERT(status == pdPASS);
-
-  status = xTaskCreate(print_task, "print_task", 250, NULL, 2, &handle_print_task);
-  configASSERT(status == pdPASS);
-
   status = xTaskCreate(led_task, "led_task", 250, NULL, 2, &handle_led_task);
   configASSERT(status == pdPASS);
 
-//  status = xTaskCreate(rtc_task, "rtc_task", 250, NULL, 2, &handle_rtc_task);
-//  configASSERT(status == pdPASS);
+  status = xTaskCreate(rtc_task, "rtc_task", 250, NULL, 2, &handle_rtc_task);
+  configASSERT(status == pdPASS);
+
+  status = xTaskCreate(cmd_task, "cmd_task", 250, NULL, 2, &handle_cmd_task);
+    configASSERT(status == pdPASS);
+
+    status = xTaskCreate(print_task, "print_task", 250, NULL, 2, &handle_print_task);
+    configASSERT(status == pdPASS);
 
   q_data = xQueueCreate(10, sizeof(char));
   configASSERT(q_data != NULL);
 
-  q_print = xQueueCreate(10, sizeof(char));
+  q_print = xQueueCreate(10, sizeof(char*));
   configASSERT(q_print != NULL);
 
   for (int i = 0; i < 4; i++)

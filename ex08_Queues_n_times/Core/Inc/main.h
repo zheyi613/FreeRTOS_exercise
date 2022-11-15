@@ -31,11 +31,13 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include <stdio.h>
 #include <string.h>
 #include "FreeRTOS.h"
 #include "task.h"
 #include "queue.h"
 #include "timers.h"
+#include "rtc.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
@@ -95,6 +97,11 @@ void LED_effect1(void);
 void LED_effect2(void);
 void LED_effect3(void);
 void LED_effect4(void);
+
+void show_time_date(void);
+void rtc_configure_time(RTC_TimeTypeDef *time);
+void rtc_configure_date(RTC_DateTypeDef *date);
+int validate_rtc_information(RTC_TimeTypeDef *time, RTC_DateTypeDef *date);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
