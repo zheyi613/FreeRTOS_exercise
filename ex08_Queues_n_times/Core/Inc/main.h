@@ -67,6 +67,7 @@ extern QueueHandle_t q_data;
 extern QueueHandle_t q_print;
 
 extern TimerHandle_t handle_led_timer[4];
+extern TimerHandle_t rtc_timer;
 
 extern state_t curr_state;
 /* USER CODE END ET */

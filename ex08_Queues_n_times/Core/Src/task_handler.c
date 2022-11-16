@@ -251,9 +251,24 @@ void rtc_task(void *param)
 				}
 				break;
 			case sRtcReport:
+				if (cmd->len == 1) {
+					if (cmd->payload[0] == 'y') {
+						if (xTimerIsTimerActive(rtc_timer) == pdFALSE)
+							xTimerStart(rtc_timer, portMAX_DELAY);
+					} else if (cmd->payload[0] == 'n') {
+						xTimerStop(rtc_timer, portMAX_DELAY);
+					} else {
+						xQueueSend(q_print, &msg_inv, portMAX_DELAY);
+					}
+				} else {
+					xQueueSend(q_print, &msg_inv, portMAX_DELAY);
+				}
+				curr_state = sMainMenu;
 				break;
 			default:
 				xQueueSend(q_print, &msg_inv, portMAX_DELAY);
+				curr_state = sMainMenu;
+				rtc_state = 0;
 			}
 		}
 

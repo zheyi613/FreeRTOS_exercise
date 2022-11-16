@@ -57,6 +57,7 @@ QueueHandle_t q_data;
 QueueHandle_t q_print;
 
 TimerHandle_t handle_led_timer[4];
+TimerHandle_t rtc_timer;
 
 state_t curr_state = sMainMenu;
 volatile uint8_t user_data;
@@ -66,6 +67,7 @@ volatile uint8_t user_data;
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
 void led_effect_callback(TimerHandle_t xTimer);
+void rtc_report_callback(TimerHandle_t xTimer);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -136,6 +138,8 @@ int main(void)
   for (int i = 0; i < 4; i++)
 	  handle_led_timer[i] = xTimerCreate("led_timer", pdMS_TO_TICKS(500), pdTRUE, (void *)(i + 1), led_effect_callback);
 
+  rtc_timer = xTimerCreate("rtc_report_timer", pdMS_TO_TICKS(1000), pdTRUE, NULL, rtc_report_callback);
+
   HAL_UART_Receive_IT(&huart2, (uint8_t *)&user_data, 1);
 
   vTaskStartScheduler();
@@ -199,6 +203,11 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+void rtc_report_callback(TimerHandle_t xTimer)
+{
+	show_time_date_itm();
+}
+
 void led_effect_callback(TimerHandle_t xTimer)
 {
 	int id;

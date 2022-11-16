@@ -101,6 +101,28 @@ void HAL_RTC_MspDeInit(RTC_HandleTypeDef* rtcHandle)
 }
 
 /* USER CODE BEGIN 1 */
+void show_time_date_itm(void)
+{
+	RTC_DateTypeDef rtc_date;
+	RTC_TimeTypeDef rtc_time;
+
+	memset(&rtc_date, 0, sizeof(rtc_date));
+	memset(&rtc_time, 0, sizeof(rtc_time));
+
+	HAL_RTC_GetTime(&hrtc, &rtc_time, RTC_FORMAT_BIN);
+	HAL_RTC_GetDate(&hrtc, &rtc_date, RTC_FORMAT_BIN);
+
+	char *format;
+	format = (rtc_time.TimeFormat == RTC_HOURFORMAT12_AM) ? "AM" : "PM";
+
+	static char str[30];
+	snprintf((char *)str, 30, "%s:\t%02d:%02d:%02d [%s]", "\nCurrent Time&Date", rtc_time.Hours, rtc_time.Minutes, rtc_time.Seconds, format);
+	SEGGER_SYSVIEW_Print((char *)str);
+
+	snprintf((char *)str, 30, "\t%02d-%02d-%02d\n", rtc_date.Month, rtc_date.Date, 2000 + rtc_date.Year);
+	SEGGER_SYSVIEW_Print((char *)str);
+}
+
 void show_time_date(void)
 {
 	static char showtime[40];
