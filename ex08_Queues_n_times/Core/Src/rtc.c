@@ -115,12 +115,9 @@ void show_time_date_itm(void)
 	char *format;
 	format = (rtc_time.TimeFormat == RTC_HOURFORMAT12_AM) ? "AM" : "PM";
 
-	static char str[30];
-	snprintf((char *)str, 30, "%s:\t%02d:%02d:%02d [%s]", "\nCurrent Time&Date", rtc_time.Hours, rtc_time.Minutes, rtc_time.Seconds, format);
-	SEGGER_SYSVIEW_Print((char *)str);
+	printf("%s:\t%02d:%02d:%02d [%s]", "\nCurrent Time&Date", rtc_time.Hours, rtc_time.Minutes, rtc_time.Seconds, format);
 
-	snprintf((char *)str, 30, "\t%02d-%02d-%02d\n", rtc_date.Month, rtc_date.Date, 2000 + rtc_date.Year);
-	SEGGER_SYSVIEW_Print((char *)str);
+	printf("\t%02d-%02d-%02d\n", rtc_date.Month, rtc_date.Date, 2000 + rtc_date.Year);
 }
 
 void show_time_date(void)

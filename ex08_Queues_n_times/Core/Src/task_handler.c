@@ -193,7 +193,7 @@ void rtc_task(void *param)
 			case sRtcTimeConfig:
 				switch (rtc_state) {
 				case HH_CONFIG:
-					time.Hours = getnumber(cmd->payload, cmd->len);
+					time.Hours = getnumber(cmd->payload, cmd->len) - 1;
 					rtc_state = MM_CONFIG;
 					xQueueSend(q_print, &msg_rtc_mm, portMAX_DELAY);
 					break;
